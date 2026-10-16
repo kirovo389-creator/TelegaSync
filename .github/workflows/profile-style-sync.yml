@@ -73,7 +73,7 @@ jobs:
               "accent_color": color,
               "background_emoji_id": emoji_id,
           }
-          Path("/tmp/profile.json").write_text(json.dumps(normalized, ensure_ascii=False, separators=(",", ":")) + "\\n", encoding="utf-8")
+          Path("/tmp/profile.json").write_text(json.dumps(normalized, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
           PY
 
       - name: Checkout database
@@ -105,7 +105,7 @@ jobs:
               "background_emoji_id": payload["background_emoji_id"],
           }
           db["updated_at"] = os.environ.get("GITHUB_RUN_ID", "")
-          path.write_text(json.dumps(db, ensure_ascii=False, indent=2, sort_keys=True) + "\\n", encoding="utf-8")
+          path.write_text(json.dumps(db, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
           PY
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
