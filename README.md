@@ -1,28 +1,27 @@
 # TelegaSync
 
-Remote, **read-only** configuration and catalog for Telega Beta.
+Static, versioned JSON catalog for Telega Beta, hosted in a separate repository.
 
 Repository: https://github.com/kirovo389-creator/TelegaSync
 
-## What this is
-
-GitHub Raw serves versioned JSON files that Telega can download without embedding a GitHub token in the APK. This repository is a static data origin, **not a private database or authenticated API**. Public files are readable by everyone.
+## Public data endpoints
 
 Base URL:
+
 `https://raw.githubusercontent.com/kirovo389-creator/TelegaSync/main`
 
-- `config/v1/manifest.json` — schema version and links to catalogs.
-- `catalog/v1/unicode.json` — Unicode emoji metadata, keyed by standard Unicode sequence.
-- `catalog/v1/custom_emoji.json` — Telega custom emoji registry schema; initially empty until verified document IDs and licensed/authorized media are supplied.
+- `config/v1/manifest.json` — schema version, Unicode version, catalog URLs, and size limits.
+- `catalog/v1/unicode.json` — full Unicode Emoji 18.0 test catalog (fully-qualified and alternate qualification entries, category, subgroup, code points, and display sequence).
+- `catalog/v1/custom_emoji.json` — registry schema for curated Telegram custom-emoji document IDs and fallback emoji. This starts empty and must only be populated with IDs that the project is authorized to use.
 
-## Safety and limitations
+Telega downloads the manifest and catalogs over HTTPS, validates the schema/version, caches the last successful catalog, applies fully-qualified Unicode sequences to native keyboard categories, and keeps its built-in list as an offline fallback until a remote catalog has been downloaded.
 
-- Never put Telegram session files, login codes, API hashes, access tokens, phone numbers, message text, or private settings in this public repository.
-- The app must validate schema/version/size and use cached data if the remote is unavailable.
-- A Telegram custom emoji document ID is only an identifier; it does not contain the media. The client still needs a valid source document and must respect Telegram's access rules.
-- GitHub Raw/Pages cannot accept private per-user writes. Personal settings sync needs a separately authenticated backend or a deliberate account-based authorization design. Do not put a GitHub PAT in the APK.
-- GitHub Pages is optional for a web status page; the app can read the Raw JSON URLs directly.
+## Custom emoji IDs are not media
 
-## Editing
+A `document_id` is an identifier, not an image or animation. The client still needs a valid Telegram document and the Telegram API to retrieve/render it; a GitHub catalog does not grant Premium or access to a pack. Do not invent IDs. Add only verified records, e.g. `{"document_id": 123456789, "fallback": "😀"}`, and validate that the referenced media is accessible before release.
 
-Edit JSON via pull requests where possible. Keep the schema version stable for compatible additions; bump it only for breaking changes. Validate JSON before committing.
+## Privacy and writes
+
+This repository is **public and read-only from the APK**. It does not receive personal settings from phones. Never place Telegram session files, login codes, API hashes, access tokens, phone numbers, private settings, messages, or account data in this repository. Personal cross-device settings sync requires a separately authenticated backend; a GitHub token must never be embedded in the APK.
+
+GitHub Raw is a static JSON origin, not a dynamic database or authenticated write API. Catalog changes should be reviewed in GitHub and validated by `.github/workflows/validate-json.yml`.
