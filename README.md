@@ -18,7 +18,13 @@ Telega downloads the manifest and catalogs over HTTPS, validates the schema/vers
 
 ## Custom emoji IDs are not media
 
-A `document_id` is an identifier, not an image or animation. The client still needs a valid Telegram document and the Telegram API to retrieve/render it; a GitHub catalog does not grant Premium or access to a pack. Do not invent IDs. Add only verified records, e.g. `{"document_id": 123456789, "fallback": "😀"}`, and validate that the referenced media is accessible before release.
+A `document_id` is an identifier, not an image or animation. The client still needs a valid Telegram document and the Telegram API to retrieve/render it; a GitHub catalog does not grant Premium or access to a pack. Do not invent IDs. Add only verified records, e.g. `{"document_id": "5875465628285931233", "fallback": "✈️"}`, and validate that the referenced media is accessible before release.
+
+## Premium/custom emoji data
+
+The current `catalog/v1/custom_emoji.json` includes 1,923 curated fallback-to-ID mappings imported from [abbosahmad/telegram-premium-emojis](https://github.com/abbosahmad/telegram-premium-emojis), file `catalog/all_emojis.json`, under its MIT license. Attribution/license text is preserved in `LICENSES/telegram-premium-emojis-MIT.txt`.
+
+IDs are stored as decimal strings so 64-bit values are not rounded by JavaScript tooling. The client may look up a registered ID by its fallback character; the Telegram client/API still has to retrieve the associated document. This catalog is community-curated rather than an official guarantee that each ID remains accessible.
 
 ## Privacy and writes
 
