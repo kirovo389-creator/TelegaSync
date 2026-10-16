@@ -44,7 +44,8 @@ jobs:
           assert custom.get("schema_version") == 1
           assert isinstance(custom.get("emojis"), list)
           for item in custom["emojis"]:
-              assert isinstance(item.get("document_id"), int) and item["document_id"] > 0
+              document_id = item.get("document_id")
+              assert isinstance(document_id, str) and document_id.isdigit() and 0 < int(document_id) <= 9223372036854775807
               assert isinstance(item.get("fallback"), str) and item["fallback"]
 
           print("TelegaSync JSON validation passed.")
