@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "source": "Unicode emoji sequences; presentation data only",
+  "note": "This starter catalog defines the structure. Populate with a reviewed, complete Unicode dataset before switching the app to this catalog as its sole source.",
+  "emojis": [
+    {
+      "sequence": "😀",
+      "name": "grinning face",
+      "group": "smileys-emotion"
+    },
+    {
+      "sequence": "❤️",
+      "name": "red heart",
+      "group": "smileys-emotion"
+    },
+    {
+      "sequence": "👍",
+      "name": "thumbs up",
+      "group": "people-body"
+    },
+    {
+      "sequence": "🔥",
+      "name": "fire",
+      "group": "travel-places"
+    }
+  ]
+}
