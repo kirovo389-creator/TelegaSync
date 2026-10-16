@@ -1,0 +1,118 @@
+name: Telega profile style sync
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  contents: write
+  issues: read
+
+concurrency:
+  group: telega-profile-style-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: contains(github.event.issue.title, '[Telega profile sync]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check allowed submitter
+        env:
+          ACTOR: ${{ github.event.issue.user.login }}
+          ALLOWED_USERS: ${{ vars.TELEGA_SYNC_ALLOWED_USERS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${ALLOWED_USERS//[[:space:],]/}" ]]; then
+            echo "::error::Set repository variable TELEGA_SYNC_ALLOWED_USERS to a comma-separated list of trusted GitHub usernames."
+            exit 1
+          fi
+          python3 - <<'PY'
+          import os, sys
+          allowed = {x.strip().casefold() for x in os.environ["ALLOWED_USERS"].split(",") if x.strip()}
+          actor = os.environ["ACTOR"].casefold()
+          if actor not in allowed:
+              print(f"::error::GitHub user {actor!r} is not allowlisted.")
+              sys.exit(1)
+          PY
+
+      - name: Parse and validate profile
+        id: profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          jq -r '.issue.body // ""' "$GITHUB_EVENT_PATH" > /tmp/issue-body.txt
+          python3 - <<'PY'
+          import json, re
+          from pathlib import Path
+
+          body = Path("/tmp/issue-body.txt").read_text(encoding="utf-8")
+          marker = "<!-- telega-profile-style-v1 -->"
+          if marker not in body:
+              raise SystemExit("Missing profile marker.")
+          raw = body.split(marker, 1)[1].strip()
+          try:
+              obj = json.loads(raw)
+          except Exception as e:
+              raise SystemExit(f"Invalid JSON: {e}")
+
+          if not isinstance(obj, dict):
+              raise SystemExit("Payload must be an object.")
+          user_id = obj.get("telegram_user_id")
+          if not isinstance(user_id, str) or not re.fullmatch(r"[1-9][0-9]{0,19}", user_id):
+              raise SystemExit("telegram_user_id must be a positive decimal string.")
+          color = obj.get("accent_color")
+          if color is not None and (not isinstance(color, int) or isinstance(color, bool) or color < -1 or color > 0xFFFFFF):
+              raise SystemExit("accent_color must be null or an integer from -1 to 16777215.")
+          emoji_id = obj.get("background_emoji_id", "0")
+          if not isinstance(emoji_id, str) or not re.fullmatch(r"[0-9]{1,20}", emoji_id):
+              raise SystemExit("background_emoji_id must be a decimal string.")
+          normalized = {
+              "telegram_user_id": user_id,
+              "accent_color": color,
+              "background_emoji_id": emoji_id,
+          }
+          Path("/tmp/profile.json").write_text(json.dumps(normalized, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
+          PY
+
+      - name: Checkout database
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+
+      - name: Upsert public profile record
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+
+          payload = json.loads(Path("/tmp/profile.json").read_text(encoding="utf-8"))
+          path = Path("profiles/v1/profiles.json")
+          path.parent.mkdir(parents=True, exist_ok=True)
+          if path.exists():
+              db = json.loads(path.read_text(encoding="utf-8"))
+          else:
+              db = {"schema_version": 1, "profiles": {}}
+          if db.get("schema_version") != 1 or not isinstance(db.get("profiles"), dict):
+              raise SystemExit("Unsupported or malformed profile database.")
+          uid = payload["telegram_user_id"]
+          db["profiles"][uid] = {
+              "accent_color": payload["accent_color"],
+              "background_emoji_id": payload["background_emoji_id"],
+          }
+          db["updated_at"] = os.environ.get("GITHUB_RUN_ID", "")
+          path.write_text(json.dumps(db, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add profiles/v1/profiles.json
+          if git diff --cached --quiet; then
+            echo "No profile changes to commit."
+            exit 0
+          fi
+          git commit -m "sync: update shared profile style"
+          git push origin HEAD:main
