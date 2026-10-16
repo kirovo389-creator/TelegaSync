@@ -8,7 +8,8 @@
   },
   "policy": {
     "read_only": true,
-    "max_response_bytes": 1048576,
+    "max_response_bytes": 4194304,
     "allow_personal_settings_upload": false
-  }
+  },
+  "unicode_version": "18.0"
 }
