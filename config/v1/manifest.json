@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "app": "Telega",
+  "updated_at": "2026-10-16",
+  "catalogs": {
+    "unicode": "https://raw.githubusercontent.com/kirovo389-creator/TelegaSync/main/catalog/v1/unicode.json",
+    "custom_emoji": "https://raw.githubusercontent.com/kirovo389-creator/TelegaSync/main/catalog/v1/custom_emoji.json"
+  },
+  "policy": {
+    "read_only": true,
+    "max_response_bytes": 1048576,
+    "allow_personal_settings_upload": false
+  }
+}
