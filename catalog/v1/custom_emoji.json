@@ -1,0 +1,5 @@
+{
+  "schema_version": 1,
+  "note": "Empty starter registry. Add only verified Telegram document IDs and known fallback sequences. IDs alone are not media files.",
+  "emojis": []
+}
