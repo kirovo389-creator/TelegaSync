@@ -1,0 +1,51 @@
+name: Validate TelegaSync JSON
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate JSON and schema basics
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          paths = [
+              Path("config/v1/manifest.json"),
+              Path("catalog/v1/unicode.json"),
+              Path("catalog/v1/custom_emoji.json"),
+          ]
+          docs = {}
+          for path in paths:
+              docs[str(path)] = json.loads(path.read_text(encoding="utf-8"))
+
+          manifest = docs["config/v1/manifest.json"]
+          assert manifest.get("schema_version") == 1
+          assert set(manifest.get("catalogs", {})) >= {"unicode", "custom_emoji"}
+
+          unicode = docs["catalog/v1/unicode.json"]
+          assert unicode.get("schema_version") == 1
+          assert isinstance(unicode.get("emojis"), list)
+          for item in unicode["emojis"]:
+              assert isinstance(item.get("sequence"), str) and item["sequence"]
+              assert isinstance(item.get("name"), str) and item["name"]
+
+          custom = docs["catalog/v1/custom_emoji.json"]
+          assert custom.get("schema_version") == 1
+          assert isinstance(custom.get("emojis"), list)
+          for item in custom["emojis"]:
+              assert isinstance(item.get("document_id"), int) and item["document_id"] > 0
+              assert isinstance(item.get("fallback"), str) and item["fallback"]
+
+          print("TelegaSync JSON validation passed.")
+          PY
